@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\NewsApp.Application\NewsApp.Application.csproj" />
+    <ProjectReference Include="..\NewsApp.Infrastructure\NewsApp.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>d8bef6a4-0cf3-4f50-a148-e3c7c5aab2e8</UserSecretsId>
+  </PropertyGroup>
+
+</Project>
