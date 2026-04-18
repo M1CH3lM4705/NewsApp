@@ -61,13 +61,25 @@ public class NewsApiService : INewsRepository
             if (apiResponse?.Articles == null)
                 return Enumerable.Empty<NewsArticle>();
 
-            return apiResponse.Articles.Select(a => new NewsArticle
-            {
-                Id = Guid.NewGuid(),
-                Title = a.Title ?? "No Title",
-                Description = a.Description ?? string.Empty,
-                Url = a.Url ?? string.Empty,
-                PublishedAt = a.PublishedAt
+            return apiResponse.Articles
+                .Where(a => !string.IsNullOrEmpty(a.Url))
+                .GroupBy(a => a.Url)
+                .Select(g => g.First())
+                .Select(a => {
+                var url = a.Url!;
+                // Geramos um GUID determinístico baseado no hash da URL
+                using var md5 = System.Security.Cryptography.MD5.Create();
+                var hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(url));
+                var guid = new Guid(hash);
+
+                return new NewsArticle
+                {
+                    Id = guid,
+                    Title = a.Title ?? "No Title",
+                    Description = a.Description ?? string.Empty,
+                    Url = url,
+                    PublishedAt = a.PublishedAt
+                };
             });
         }
         catch (HttpRequestException ex)

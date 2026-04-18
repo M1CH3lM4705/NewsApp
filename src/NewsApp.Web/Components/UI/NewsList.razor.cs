@@ -4,7 +4,7 @@ using NewsApp.Domain.Entities;
 
 namespace NewsApp.Web.Components.UI;
 
-public partial class NewsList
+public partial class NewsList : IDisposable
 {
     [Inject] 
     private INewsStateManager StateManager { get; set; } = null!;
@@ -14,10 +14,21 @@ public partial class NewsList
 
     private List<NewsArticle> _filteredArticles = new();
 
+    protected override void OnInitialized()
+    {
+        StateManager.OnStateChanged += HandleStateChanged;
+    }
+
     protected override void OnParametersSet()
     {
         // Sempre que os parâmetros mudarem, re-calculamos a lista
         UpdateFilteredArticles();
+    }
+
+    private void HandleStateChanged()
+    {
+        UpdateFilteredArticles();
+        InvokeAsync(StateHasChanged);
     }
 
     private void UpdateFilteredArticles()
@@ -35,5 +46,10 @@ public partial class NewsList
         
         // 3. Força a re-renderização
         await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        StateManager.OnStateChanged -= HandleStateChanged;
     }
 }

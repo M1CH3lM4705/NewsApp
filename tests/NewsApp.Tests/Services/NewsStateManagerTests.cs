@@ -1,4 +1,5 @@
 using NewsApp.Application.Services;
+using NewsApp.Domain.Entities;
 using Xunit;
 
 namespace NewsApp.Tests.Services;
@@ -6,18 +7,19 @@ namespace NewsApp.Tests.Services;
 public class NewsStateManagerTests
 {
     [Fact]
-    public void MarkAsRead_ShouldAddIdToCollection()
+    public void MarkAsRead_ShouldAddArticleToCollection()
     {
         // Arrange
         var stateManager = new NewsStateManager();
-        var id = Guid.NewGuid();
+        var article = new NewsArticle { Id = Guid.NewGuid(), Title = "Test" };
 
         // Act
-        stateManager.MarkAsRead(id);
+        stateManager.MarkAsRead(article);
 
         // Assert
-        Assert.True(stateManager.IsRead(id));
-        Assert.Contains(id, stateManager.GetReadArticleIds());
+        Assert.True(stateManager.IsRead(article.Id));
+        Assert.Contains(article.Id, stateManager.GetReadArticleIds());
+        Assert.Contains(article, stateManager.GetReadArticles());
     }
 
     [Fact]
@@ -36,17 +38,17 @@ public class NewsStateManagerTests
     {
         // Arrange
         var stateManager = new NewsStateManager();
-        var id1 = Guid.NewGuid();
-        var id2 = Guid.NewGuid();
+        var art1 = new NewsArticle { Id = Guid.NewGuid(), Title = "A" };
+        var art2 = new NewsArticle { Id = Guid.NewGuid(), Title = "B" };
 
         // Act
-        stateManager.MarkAsRead(id1);
-        stateManager.MarkAsRead(id2);
+        stateManager.MarkAsRead(art1);
+        stateManager.MarkAsRead(art2);
         var result = stateManager.GetReadArticleIds();
 
         // Assert
         Assert.Equal(2, result.Count);
-        Assert.Contains(id1, result);
-        Assert.Contains(id2, result);
+        Assert.Contains(art1.Id, result);
+        Assert.Contains(art2.Id, result);
     }
 }

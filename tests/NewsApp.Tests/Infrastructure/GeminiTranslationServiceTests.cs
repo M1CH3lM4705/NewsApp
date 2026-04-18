@@ -24,7 +24,7 @@ public class GeminiTranslationServiceTests
     public GeminiTranslationServiceTests()
     {
         _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
-        _httpClient = new HttpClient(_mockHttpMessageHandler.Object) { BaseAddress = new Uri("https://gemini.api/") };
+        _httpClient = new HttpClient(_mockHttpMessageHandler.Object) { BaseAddress = new Uri("https://generativelanguage.googleapis.com/") };
         _cache = new MemoryCache(new MemoryCacheOptions());
         _mockLogger = new Mock<ILogger<GeminiTranslationService>>();
         _config = Options.Create(new AppConfiguration { GeminiApiKey = "valid-key" });
@@ -39,6 +39,14 @@ public class GeminiTranslationServiceTests
             new NewsArticle { Title = "English Title", Description = "English Desc", Url = "http://news.com/1" } 
         };
 
+        var translationResult = new BulkTranslationResponse
+        {
+            Translations = new List<GeminiTranslationItem>
+            {
+                new GeminiTranslationItem { Url = "http://news.com/1", Title = "Título Traduzido", Summary = "Resumo Traduzido" }
+            }
+        };
+
         var geminiResponse = new GeminiResponse
         {
             Candidates = new List<Candidate>
@@ -47,7 +55,7 @@ public class GeminiTranslationServiceTests
                 {
                     Content = new Content
                     {
-                        Parts = new List<Part> { new Part { Text = "{\"translatedTitle\": \"Título Traduzido\", \"shortSummary\": \"Resumo Traduzido\"}" } }
+                        Parts = new List<Part> { new Part { Text = JsonSerializer.Serialize(translationResult) } }
                     }
                 }
             }
@@ -114,6 +122,14 @@ public class GeminiTranslationServiceTests
             new NewsArticle { Title = "English Title", Url = "http://news.com/3" } 
         };
 
+        var translationResult = new BulkTranslationResponse
+        {
+            Translations = new List<GeminiTranslationItem>
+            {
+                new GeminiTranslationItem { Url = "http://news.com/3", Title = "Cached Title", Summary = "..." }
+            }
+        };
+
         var geminiResponse = new GeminiResponse
         {
             Candidates = new List<Candidate>
@@ -122,7 +138,7 @@ public class GeminiTranslationServiceTests
                 {
                     Content = new Content
                     {
-                        Parts = new List<Part> { new Part { Text = "{\"translatedTitle\": \"Cached Title\", \"shortSummary\": \"...\"}" } }
+                        Parts = new List<Part> { new Part { Text = JsonSerializer.Serialize(translationResult) } }
                     }
                 }
             }

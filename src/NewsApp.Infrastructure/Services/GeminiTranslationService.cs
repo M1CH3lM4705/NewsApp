@@ -118,15 +118,18 @@ public class GeminiTranslationService : IGeminiTranslationService
         var results = new List<NewsArticle>();
         foreach (var item in bulkDto?.Translations ?? new())
         {
-            var orig = articles.First(a => a.Url == item.Url);
-            results.Add(new NewsArticle
+            var orig = articles.FirstOrDefault(a => a.Url == item.Url);
+            if (orig != null)
             {
-                Id = orig.Id,
-                Url = orig.Url,
-                PublishedAt = orig.PublishedAt,
-                Title = item.Title,
-                Description = item.Summary
-            });
+                results.Add(new NewsArticle
+                {
+                    Id = orig.Id,
+                    Url = orig.Url,
+                    PublishedAt = orig.PublishedAt,
+                    Title = item.Title,
+                    Description = item.Summary
+                });
+            }
         }
         return results;
     }

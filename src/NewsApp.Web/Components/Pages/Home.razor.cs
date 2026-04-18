@@ -51,7 +51,13 @@ public partial class Home
         await Task.Delay(500);
         
         var newArticles = await NewsUseCase.ExecuteAsync(_selectedCategory, _searchQuery, _currentPage, PageSize);
-        _articles.AddRange(newArticles);
+        foreach (var article in newArticles)
+        {
+            if (!_articles.Any(a => a.Url == article.Url))
+            {
+                _articles.Add(article);
+            }
+        }
         
         isSyncing = false;
     }

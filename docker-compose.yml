@@ -1,0 +1,15 @@
+services:
+  newsapp:
+    image: newsapp-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8080"
+    env_file:
+      - local.env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      # As variáveis no local.env devem seguir o padrão:
+      # AppConfiguration__NewsApiKey=...
+      # AppConfiguration__GeminiApiKey=...

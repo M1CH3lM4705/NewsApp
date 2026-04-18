@@ -10,7 +10,7 @@
         <MudGrid Spacing="3">
             @foreach (var article in _filteredArticles)
             {
-                <MudItem xs="12" sm="12" md="6" lg="4">
+                <MudItem xs="12" sm="12" md="6" lg="4" @key="article.Id">
                     <NewsCard Article="article" OnRead="RefreshList" />
                 </MudItem>
             }
