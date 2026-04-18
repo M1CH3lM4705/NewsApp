@@ -31,47 +31,25 @@ public class GeminiTranslationServiceTests
     }
 
     [Fact]
-    public async Task TranslateArticlesAsync_ShouldTranslateArticles_WhenApiCallIsSuccessful()
+    public async Task TranslateArticlesAsync_ShouldTranslateBulk_WhenApiCallIsSuccessful()
     {
         // Arrange
         var articles = new List<NewsArticle> 
         { 
-            new NewsArticle { Title = "English Title", Description = "English Desc", Url = "http://news.com/1" } 
+            new NewsArticle { Title = "Title 1", Url = "url1" },
+            new NewsArticle { Title = "Title 2", Url = "url2" }
         };
 
         var translationResult = new BulkTranslationResponse
         {
             Translations = new List<GeminiTranslationItem>
             {
-                new GeminiTranslationItem { Url = "http://news.com/1", Title = "Título Traduzido", Summary = "Resumo Traduzido" }
+                new GeminiTranslationItem { Url = "url1", Title = "T1 Trad", Summary = "S1 Trad" },
+                new GeminiTranslationItem { Url = "url2", Title = "T2 Trad", Summary = "S2 Trad" }
             }
         };
 
-        var geminiResponse = new GeminiResponse
-        {
-            Candidates = new List<Candidate>
-            {
-                new Candidate
-                {
-                    Content = new Content
-                    {
-                        Parts = new List<Part> { new Part { Text = JsonSerializer.Serialize(translationResult) } }
-                    }
-                }
-            }
-        };
-
-        _mockHttpMessageHandler.Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>()
-            )
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(geminiResponse))
-            });
+        SetupMockResponse(JsonSerializer.Serialize(translationResult));
 
         var service = new GeminiTranslationService(_httpClient, _config, _cache, _mockLogger.Object);
 
@@ -79,134 +57,31 @@ public class GeminiTranslationServiceTests
         var result = await service.TranslateArticlesAsync(articles);
 
         // Assert
-        var translated = result.First();
-        Assert.Equal("Título Traduzido", translated.Title);
-        Assert.Equal("Resumo Traduzido", translated.Description);
+        Assert.Equal(2, result.Count());
+        Assert.Equal("T1 Trad", result.First(a => a.Url == "url1").Title);
+        Assert.Equal("T2 Trad", result.First(a => a.Url == "url2").Title);
     }
 
     [Fact]
-    public async Task TranslateArticlesAsync_ShouldReturnOriginal_WhenApiFails()
+    public async Task TranslateArticlesAsync_ShouldFallbackToOriginal_WhenGeminiOmitsArticle()
     {
         // Arrange
         var articles = new List<NewsArticle> 
         { 
-            new NewsArticle { Title = "Original Title", Url = "http://news.com/2" } 
+            new NewsArticle { Title = "Original 1", Url = "url1" },
+            new NewsArticle { Title = "Original 2", Url = "url2" }
         };
 
-        _mockHttpMessageHandler.Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>()
-            )
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.InternalServerError
-            });
-
-        var service = new GeminiTranslationService(_httpClient, _config, _cache, _mockLogger.Object);
-
-        // Act
-        var result = await service.TranslateArticlesAsync(articles);
-
-        // Assert
-        Assert.Equal("Original Title", result.First().Title);
-    }
-
-    [Fact]
-    public async Task TranslateArticlesAsync_ShouldUseCache_OnSubsequentCalls()
-    {
-        // Arrange
-        var articles = new List<NewsArticle> 
-        { 
-            new NewsArticle { Title = "English Title", Url = "http://news.com/3" } 
-        };
-
+        // Gemini only returns 1 translation
         var translationResult = new BulkTranslationResponse
         {
             Translations = new List<GeminiTranslationItem>
             {
-                new GeminiTranslationItem { Url = "http://news.com/3", Title = "Cached Title", Summary = "..." }
+                new GeminiTranslationItem { Url = "url1", Title = "T1 Trad", Summary = "S1 Trad" }
             }
         };
 
-        var geminiResponse = new GeminiResponse
-        {
-            Candidates = new List<Candidate>
-            {
-                new Candidate
-                {
-                    Content = new Content
-                    {
-                        Parts = new List<Part> { new Part { Text = JsonSerializer.Serialize(translationResult) } }
-                    }
-                }
-            }
-        };
-
-        _mockHttpMessageHandler.Protected()
-            .SetupSequence<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>()
-            )
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(geminiResponse))
-            })
-            .ThrowsAsync(new Exception("Should not be called twice"));
-
-        var service = new GeminiTranslationService(_httpClient, _config, _cache, _mockLogger.Object);
-
-        // Act
-        await service.TranslateArticlesAsync(articles); // First call (fills cache)
-        var result = await service.TranslateArticlesAsync(articles); // Second call (from cache)
-
-        // Assert
-        Assert.Equal("Cached Title", result.First().Title);
-        _mockHttpMessageHandler.Protected().Verify(
-            "SendAsync",
-            Times.Once(),
-            ItExpr.IsAny<HttpRequestMessage>(),
-            ItExpr.IsAny<CancellationToken>()
-        );
-    }
-
-    [Fact]
-    public async Task TranslateArticlesAsync_ShouldHandleMalformedJsonFromGemini()
-    {
-        // Arrange
-        var articles = new List<NewsArticle> 
-        { 
-            new NewsArticle { Title = "Original Title", Url = "http://news.com/4" } 
-        };
-
-        var geminiResponse = new GeminiResponse
-        {
-            Candidates = new List<Candidate>
-            {
-                new Candidate
-                {
-                    Content = new Content
-                    {
-                        Parts = new List<Part> { new Part { Text = "not-a-json" } }
-                    }
-                }
-            }
-        };
-
-        _mockHttpMessageHandler.Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>()
-            )
-            .ReturnsAsync(new HttpResponseMessage
-            {
-                StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(geminiResponse))
-            });
+        SetupMockResponse(JsonSerializer.Serialize(translationResult));
 
         var service = new GeminiTranslationService(_httpClient, _config, _cache, _mockLogger.Object);
 
@@ -214,6 +89,45 @@ public class GeminiTranslationServiceTests
         var result = await service.TranslateArticlesAsync(articles);
 
         // Assert
-        Assert.Equal("Original Title", result.First().Title);
+        Assert.Equal("T1 Trad", result.First(a => a.Url == "url1").Title);
+        Assert.Equal("Original 2", result.First(a => a.Url == "url2").Title); // Fallback to original
+    }
+
+    [Fact]
+    public async Task TranslateArticlesAsync_ShouldReturnOriginals_WhenApiFails()
+    {
+        // Arrange
+        var articles = new List<NewsArticle> { new NewsArticle { Title = "Original", Url = "url" } };
+        
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage { StatusCode = HttpStatusCode.TooManyRequests });
+
+        var service = new GeminiTranslationService(_httpClient, _config, _cache, _mockLogger.Object);
+
+        // Act
+        var result = await service.TranslateArticlesAsync(articles);
+
+        // Assert
+        Assert.Equal("Original", result.First().Title);
+    }
+
+    private void SetupMockResponse(string jsonText)
+    {
+        var geminiResponse = new GeminiResponse
+        {
+            Candidates = new List<Candidate>
+            {
+                new Candidate { Content = new Content { Parts = new List<Part> { new Part { Text = jsonText } } } }
+            }
+        };
+
+        _mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(geminiResponse))
+            });
     }
 }

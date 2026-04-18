@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NewsApp.Application", "src\NewsApp.Application\NewsApp.Application.csproj", "{4F4DF619-8EED-4FFE-B9FC-C21513266C40}"
 EndProject
@@ -97,5 +100,8 @@ Global
 		{0F6C8AC0-1DAB-4E8D-B6F4-76DE298327F4} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{27B5F324-2109-4632-87A2-9BDD83B51EED} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{1DC7EC58-D61D-400F-A7A2-022F37C39EEA} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1F5F2DFD-8821-4353-9A41-FF1CE34C06BE}
 	EndGlobalSection
 EndGlobal

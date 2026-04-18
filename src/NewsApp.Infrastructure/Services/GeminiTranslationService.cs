@@ -1,12 +1,12 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NewsApp.Application.Configuration;
 using NewsApp.Application.Interfaces;
 using NewsApp.Domain.Entities;
+using NewsApp.Domain.Exceptions;
 using NewsApp.Infrastructure.ExternalApis.Gemini;
 
 namespace NewsApp.Infrastructure.Services;
@@ -33,7 +33,7 @@ public class GeminiTranslationService : IGeminiTranslationService
     public async Task<IEnumerable<NewsArticle>> TranslateArticlesAsync(IEnumerable<NewsArticle> articles)
     {
         var articlesList = articles.ToList();
-        if (!articlesList.Any()) return articlesList;
+        if (articlesList.Count == 0) return articlesList;
 
         var resultList = new List<NewsArticle>();
         var toTranslate = new List<NewsArticle>();
@@ -41,8 +41,8 @@ public class GeminiTranslationService : IGeminiTranslationService
         // 1. Verifica Cache
         foreach (var article in articlesList)
         {
-            var cacheKey = $"trans_{article.Url.GetHashCode()}";
-            if (_cache.TryGetValue(cacheKey, out NewsArticle cachedArticle))
+            var cacheKey = $"trans_{article.Url.GetHashCode(StringComparison.CurrentCulture)}";
+            if (_cache.TryGetValue(cacheKey, out NewsArticle? cachedArticle) && cachedArticle != null)
             {
                 resultList.Add(cachedArticle);
             }
@@ -52,24 +52,29 @@ public class GeminiTranslationService : IGeminiTranslationService
             }
         }
 
-        if (!toTranslate.Any()) return resultList.Concat(articlesList.Where(a => !resultList.Any(r => r.Url == a.Url)));
+        if (toTranslate.Count == 0) return resultList.Concat(articlesList.Where(a => !resultList.Any(r => r.Url == a.Url)));
 
         try
         {
             // 2. Tradução em Massa (Bulk) para economizar cota
-            var translatedBatch = await TranslateBatchWithGeminiAsync(toTranslate);
+            var translatedBatch = await TranslateBatchWithGeminiAsync(toTranslate).ConfigureAwait(false);
             
             foreach (var translated in translatedBatch)
             {
-                var cacheKey = $"trans_{translated.Url.GetHashCode()}";
+                var cacheKey = $"trans_{translated.Url.GetHashCode(StringComparison.CurrentCulture)}";
                 _cache.Set(cacheKey, translated, TimeSpan.FromHours(1));
                 resultList.Add(translated);
             }
         }
+        catch (BaseInfrastructureException ex)
+        {
+            _logger.LogWarning("Falha na infraestrutura de tradução: {Message}. Serviço: {Service}. Usando originais.", ex.Message, ex.ServiceName);
+            return articlesList;
+        }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Fallback Global: Falha na tradução em massa. Mantendo originais.");
-            return articlesList; // Retorna tudo original em caso de erro na API
+            _logger.LogWarning(ex, "Fallback Global: Falha inesperada na tradução. Mantendo originais.");
+            return articlesList; 
         }
 
         // Garante que retornamos na mesma ordem ou pelo menos todos os itens
@@ -81,6 +86,40 @@ public class GeminiTranslationService : IGeminiTranslationService
         if (string.IsNullOrEmpty(_config.GeminiApiKey))
             throw new InvalidOperationException("Gemini API Key is missing.");
 
+        var request = BuildTranslationRequest(articles);
+
+        HttpResponseMessage response;
+        try 
+        {
+            response = await _httpClient.PostAsJsonAsync(
+                $"v1beta/models/gemini-2.5-flash-lite:generateContent?key={_config.GeminiApiKey}",
+                request).ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new ExternalServiceException("Erro de rede ao conectar com Gemini AI.", nameof(GeminiTranslationService), innerException: ex);
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            throw new ExternalServiceException(
+                $"Erro na API do Gemini: {response.StatusCode}", 
+                nameof(GeminiTranslationService), 
+                (int)response.StatusCode, 
+                error);
+        }
+
+        var geminiResult = await response.Content.ReadFromJsonAsync<GeminiResponse>();
+        var jsonText = geminiResult?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
+
+        var bulkDto = CleanAndDeserializeResponse(jsonText);
+        
+        return MapToDomain(articles, bulkDto);
+    }
+
+    private GeminiRequest BuildTranslationRequest(List<NewsArticle> articles)
+    {
         var systemPrompt = "Você é um tradutor jornalístico. Traduza os títulos para português e gere resumos de no máximo 3 linhas em português. " +
                            "Receba uma lista de notícias e retorne um objeto JSON contendo um array chamado 'translations'. " +
                            "Cada item do array deve ter: 'url' (id único), 'title' e 'summary'.";
@@ -93,32 +132,36 @@ public class GeminiTranslationService : IGeminiTranslationService
             Parts = new List<Part> { new Part { Text = $"{systemPrompt}\n\nNotícias:\n{articlesJson}" } }
         });
 
-        var response = await _httpClient.PostAsJsonAsync(
-            $"v1beta/models/gemini-2.5-flash-lite:generateContent?key={_config.GeminiApiKey}", 
-            request);
+        return request;
+    }
 
-        if (!response.IsSuccessStatusCode)
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            throw new Exception($"Gemini API error: {response.StatusCode}. Details: {error}");
-        }
-
-        var geminiResult = await response.Content.ReadFromJsonAsync<GeminiResponse>();
-        var jsonText = geminiResult?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
-
-        if (string.IsNullOrEmpty(jsonText)) throw new Exception("Empty response");
+    private BulkTranslationResponse CleanAndDeserializeResponse(string? jsonText)
+    {
+        if (string.IsNullOrEmpty(jsonText)) 
+            throw new TranslationException("Resposta vazia ou inválida do Gemini.", nameof(GeminiTranslationService));
 
         // Limpeza de Markdown
-        jsonText = jsonText.Trim();
-        if (jsonText.StartsWith("```json")) jsonText = jsonText.Replace("```json", "");
-        if (jsonText.EndsWith("```")) jsonText = jsonText.Substring(0, jsonText.Length - 3);
+        var cleaned = jsonText.Trim();
+        if (cleaned.StartsWith("```json")) cleaned = cleaned.Replace("```json", "");
+        if (cleaned.EndsWith("```")) cleaned = cleaned.Substring(0, cleaned.Length - 3);
 
-        var bulkDto = JsonSerializer.Deserialize<BulkTranslationResponse>(jsonText.Trim());
-        
-        var results = new List<NewsArticle>();
-        foreach (var item in bulkDto?.Translations ?? new())
+        try 
         {
-            var orig = articles.FirstOrDefault(a => a.Url == item.Url);
+            return JsonSerializer.Deserialize<BulkTranslationResponse>(cleaned.Trim()) 
+                   ?? throw new TranslationException("JSON nulo após desserialização.", nameof(GeminiTranslationService));
+        }
+        catch (JsonException ex)
+        {
+            throw new TranslationException("Falha ao desserializar resposta de tradução do Gemini.", nameof(GeminiTranslationService), ex);
+        }
+    }
+
+    private List<NewsArticle> MapToDomain(List<NewsArticle> originalArticles, BulkTranslationResponse bulkDto)
+    {
+        var results = new List<NewsArticle>();
+        foreach (var item in bulkDto.Translations)
+        {
+            var orig = originalArticles.FirstOrDefault(a => a.Url == item.Url);
             if (orig != null)
             {
                 results.Add(new NewsArticle
@@ -133,20 +176,4 @@ public class GeminiTranslationService : IGeminiTranslationService
         }
         return results;
     }
-}
-
-public class BulkTranslationResponse
-{
-    [JsonPropertyName("translations")]
-    public List<GeminiTranslationItem> Translations { get; set; } = new();
-}
-
-public class GeminiTranslationItem
-{
-    [JsonPropertyName("url")]
-    public string Url { get; set; } = string.Empty;
-    [JsonPropertyName("title")]
-    public string Title { get; set; } = string.Empty;
-    [JsonPropertyName("summary")]
-    public string Summary { get; set; } = string.Empty;
 }
