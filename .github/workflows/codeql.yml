@@ -1,0 +1,49 @@
+name: "CodeQL Security Analysis"
+
+on:
+  push:
+    branches: [ "development", "staging", "production" ]
+  pull_request:
+    # A análise roda sempre que um PR for aberto para as branches principais
+    branches: [ "development", "staging", "production" ]
+  schedule:
+    - cron: '30 1 * * 1' # Roda toda segunda-feira à 1:30 da manhã por segurança
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'csharp' ] # Foco total no seu ecossistema
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # O CodeQL precisa inicializar antes da compilação
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # "security-and-quality" inclui code smells além de falhas de segurança
+        queries: security-and-quality 
+
+    # Como você usa .NET 9, precisamos garantir que o SDK esteja lá para o 'autobuild'
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    # O CodeQL tenta buildar automaticamente o projeto para analisar o binário
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v3
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
