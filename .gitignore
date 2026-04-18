@@ -48,3 +48,7 @@ Desktop.ini
 appsettings.json
 appsettings.*.json
 secrets.json
+
+# Environment files
+.env
+*.env

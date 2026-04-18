@@ -1,31 +1,45 @@
-# Segurança e Mitigação de Riscos
+# Segurança e Proteção de Dados (Security Advisory)
 
-A segurança é uma prioridade no **NewsApp**. Este documento detalha as abordagens adotadas para mitigar vulnerabilidades comuns.
+Este documento detalha as medidas de segurança, privacidade e proteção contra ameaças implementadas no **NewsApp**.
 
-## 1. Proteção de Chaves de API (Secrets Management)
-**Risco:** Exposição de chaves de API (`NewsApiKey`, `GeminiApiKey`) em repositórios públicos, permitindo o uso indevido e cobranças financeiras.
+## 1. Modelo de Confiança e Proxy Backend
 
-**Mitigação:**
-- **.gitignore Robusto**: O arquivo `.gitignore` na raiz da solução bloqueia explicitamente o rastreamento de arquivos de configuração locais como `appsettings.json`, `appsettings.Development.json` e `secrets.json`.
-- **User Secrets**: No ambiente de desenvolvimento, a aplicação utiliza a ferramenta `dotnet user-secrets`. As chaves são armazenadas em uma pasta protegida no perfil do usuário do Sistema Operacional (fora da árvore de diretórios do projeto), garantindo que nunca sejam comitadas acidentalmente.
-- **Injeção Tipada (`IOptions`)**: As variáveis de ambiente são mapeadas para uma classe fortemente tipada (`AppConfiguration`). Isso evita a leitura direta de strings pelo código, reduzindo erros de digitação e facilitando a validação das configurações no momento do *startup*.
+Para garantir a proteção total de credenciais e chaves de API, o **NewsApp** utiliza um modelo de **Proxy no Servidor**:
 
-## 2. Tratamento de Exceções e Falhas de Rede
-**Risco:** Falhas de comunicação com APIs externas podem gerar exceções não tratadas (`Unhandled Exceptions`), derrubando a aplicação (Denial of Service local) ou expondo *Stack Traces* detalhados para o usuário final, o que pode revelar a estrutura interna da aplicação (Information Disclosure).
+- **Navegador (Client-side)**: A interface Blazor (UI) nunca tem acesso às chaves de API (`NewsApiKey` ou `GeminiApiKey`).
+- **Servidor (Blazor Server)**: Todo o processamento lógico, comunicação com APIs de terceiros e gerenciamento de segredos ocorre exclusivamente no servidor. 
+- **Isolamento**: As chaves são injetadas via Variáveis de Ambiente ou `dotnet user-secrets` e são consumidas apenas por serviços rodando no backend.
 
-**Mitigação:**
-- O serviço `NewsApiService` encapsula todas as chamadas HTTP dentro de um bloco `try-catch` específico.
-- **Captura Específica**: Capturamos `HttpRequestException` para problemas de rede (timeout, DNS) e validamos o `IsSuccessStatusCode` da resposta HTTP.
-- **Falha Segura (Fail-Safe)**: Em caso de erro, o serviço loga o detalhe da falha internamente (usando `ILogger`) e retorna uma coleção vazia (`Enumerable.Empty<NewsArticle>()`) para a camada superior. Isso garante que a UI continue funcionando graciosamente, mesmo que a fonte de dados externa esteja indisponível.
+## 2. Proteção contra Injeções
 
-## 3. Segurança no Front-End (Blazor)
-**Risco:** Ataques de Cross-Site Scripting (XSS) e Cross-Site Request Forgery (CSRF).
+Implementamos múltiplas camadas de defesa contra ataques de injeção:
 
-**Mitigação:**
-- **Razor Engine**: O framework Blazor Web App codifica automaticamente (HTML encoding) todas as strings renderizadas no DOM (usando o símbolo `@`). Isso previne a injeção de scripts maliciosos (XSS) vindos de APIs de notícias de terceiros.
-- **Antiforgery**: O middleware `UseAntiforgery()` está configurado no `Program.cs` para mitigar ataques CSRF na submissão de eventuais formulários dentro da aplicação.
+- **XSS e Sanitização**: Todos os inputs de usuário (como o campo de busca e categorias) são sanitizados utilizando `WebUtility.HtmlEncode`. O comprimento das queries é limitado para evitar ataques de estouro ou negação de serviço.
+- **Prompt Injection (IA)**: No serviço de tradução do Gemini, utilizamos técnicas de **Defensive Prompting**. O conteúdo das notícias é delimitado por marcadores estritos (`<<< CONTEÚDO >>>`) e a IA recebe instruções explícitas para ignorar comandos ou perguntas embutidas no texto original, atuando apenas como tradutora.
 
-## Próximos Passos (Produção)
-Para um ambiente produtivo, recomenda-se:
-- Substituir o User Secrets por um provedor de segredos robusto, como o **Azure Key Vault** ou **AWS Key Management Service (KMS)**.
-- Implementar políticas de **Retry e Circuit Breaker** (ex: usando a biblioteca *Polly*) nas chamadas HttpClient para aumentar a resiliência contra instabilidades temporárias das APIs externas.
+## 3. Segurança na Comunicação e Headers
+
+A aplicação configura headers de segurança recomendados pela OWASP no middleware do ASP.NET:
+
+- **X-Content-Type-Options: nosniff**: Evita que o navegador tente "adivinhar" o tipo de conteúdo, prevenindo ataques de MIME-sniffing.
+- **X-Frame-Options: DENY**: Impede que a aplicação seja carregada dentro de um iframe, protegendo contra ataques de *Clickjacking*.
+- **Content-Security-Policy (CSP)**: Implementamos uma política restritiva que permite apenas o carregamento de recursos de fontes confiáveis (própria origem, Google Fonts e NewsAPI), mitigando XSS.
+- **HSTS (Strict-Transport-Security)**: Garante que toda a comunicação seja feita via HTTPS.
+
+## 4. Rate Limiting (Prevenção de DoS)
+
+Para evitar ataques de força bruta, raspagem de dados em massa (scraping) ou negação de serviço que possam esgotar os créditos das APIs, implementamos o **Microsoft.AspNetCore.RateLimiting**:
+
+- **Política**: Janela fixa de 1 minuto.
+- **Limite**: Máximo de 30 requisições por minuto por IP/Sessão.
+- **Resposta**: Retorno automático de `429 Too Many Requests` ao exceder o limite.
+
+## 5. Reportando Vulnerabilidades
+
+Se você encontrar alguma falha de segurança no NewsApp, por favor:
+
+1. **NÃO abra uma Issue pública** no GitHub.
+2. Envie um e-mail detalhado para a equipe de desenvolvimento (miche... [seu e-mail]).
+3. Forneça o passo a passo para reproduzir a vulnerabilidade.
+
+Nós nos comprometemos a analisar e corrigir falhas críticas em até 48 horas.

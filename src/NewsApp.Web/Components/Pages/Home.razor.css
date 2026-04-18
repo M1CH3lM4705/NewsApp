@@ -1,0 +1,25 @@
+.hero-section {
+    background: linear-gradient(135deg, var(--mud-palette-primary) 0%, #3a0647 100%);
+    color: white !important;
+}
+
+.hero-title, .hero-subtitle {
+    color: white !important;
+}
+
+.rounded-pill {
+    border-radius: 50px !important;
+}
+
+.search-input {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-radius: 8px !important;
+}
+
+.search-input ::deep .mud-input-slot {
+    color: #333 !important;
+}
+
+.search-input ::deep .mud-input-label {
+    color: #666 !important;
+}

@@ -21,7 +21,7 @@ public class NewsApiService : INewsRepository
         _logger = logger;
     }
 
-    public async Task<IEnumerable<NewsArticle>> GetArticlesAsync()
+    public async Task<IEnumerable<NewsArticle>> GetArticlesAsync(string? category = null, string? query = null, int page = 1, int pageSize = 10)
     {
         try
         {
@@ -32,19 +32,32 @@ public class NewsApiService : INewsRepository
                 return Enumerable.Empty<NewsArticle>();
             }
 
-            // Exemplo consumindo top-headlines. Em produção a URL base estaria no appsettings/DI
-            var requestUri = $"https://newsapi.org/v2/top-headlines?country=us&apiKey={apiKey}";
+            // Sanitização de inputs
+            var sanitizedCategory = System.Net.WebUtility.HtmlEncode(category ?? string.Empty);
+            var sanitizedQuery = System.Net.WebUtility.HtmlEncode(query ?? string.Empty);
+            if (sanitizedQuery.Length > 100) sanitizedQuery = sanitizedQuery.Substring(0, 100);
+
+            var requestUri = $"https://newsapi.org/v2/top-headlines?country=us&apiKey={apiKey}&page={page}&pageSize={pageSize}";
+            
+            if (!string.IsNullOrEmpty(sanitizedCategory))
+                requestUri += $"&category={sanitizedCategory}";
+            
+            if (!string.IsNullOrEmpty(sanitizedQuery))
+                requestUri += $"&q={Uri.EscapeDataString(sanitizedQuery)}";
             
             var response = await _httpClient.GetAsync(requestUri);
             
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError("NewsAPI returned error: {StatusCode}", response.StatusCode);
+                var errorContent = await response.Content.ReadAsStringAsync();
+                _logger.LogError("NewsAPI returned error: {StatusCode}. Details: {ErrorContent}", response.StatusCode, errorContent);
                 return Enumerable.Empty<NewsArticle>();
             }
 
             var apiResponse = await response.Content.ReadFromJsonAsync<NewsApiResponse>();
             
+            _logger.LogInformation("NewsAPI returned {Count} articles.", apiResponse?.Articles?.Count ?? 0);
+
             if (apiResponse?.Articles == null)
                 return Enumerable.Empty<NewsArticle>();
 

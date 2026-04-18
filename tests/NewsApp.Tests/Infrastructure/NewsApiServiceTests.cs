@@ -70,11 +70,72 @@ public class NewsApiServiceTests
             )
             .ReturnsAsync(new HttpResponseMessage
             {
-                StatusCode = HttpStatusCode.Unauthorized
+                StatusCode = HttpStatusCode.Unauthorized,
+                Content = new StringContent("Unauthorized")
             });
 
         var httpClient = new HttpClient(mockHttpMessageHandler.Object);
         var configOptions = Options.Create(new AppConfiguration { NewsApiKey = "invalid-key" });
+        var mockLogger = new Mock<ILogger<NewsApiService>>();
+
+        var service = new NewsApiService(httpClient, configOptions, mockLogger.Object);
+
+        // Act
+        var result = await service.GetArticlesAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetArticlesAsync_ShouldReturnEmpty_WhenNetworkErrorOccurs()
+    {
+        // Arrange
+        var mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        
+        mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ThrowsAsync(new HttpRequestException("Network failure"));
+
+        var httpClient = new HttpClient(mockHttpMessageHandler.Object);
+        var configOptions = Options.Create(new AppConfiguration { NewsApiKey = "key" });
+        var mockLogger = new Mock<ILogger<NewsApiService>>();
+
+        var service = new NewsApiService(httpClient, configOptions, mockLogger.Object);
+
+        // Act
+        var result = await service.GetArticlesAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetArticlesAsync_ShouldReturnEmpty_WhenJsonIsMalformed()
+    {
+        // Arrange
+        var mockHttpMessageHandler = new Mock<HttpMessageHandler>();
+        
+        mockHttpMessageHandler.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>()
+            )
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent("invalid-json")
+            });
+
+        var httpClient = new HttpClient(mockHttpMessageHandler.Object);
+        var configOptions = Options.Create(new AppConfiguration { NewsApiKey = "key" });
         var mockLogger = new Mock<ILogger<NewsApiService>>();
 
         var service = new NewsApiService(httpClient, configOptions, mockLogger.Object);
