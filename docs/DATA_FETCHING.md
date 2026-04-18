@@ -10,7 +10,9 @@ A aplicação utiliza uma estratégia de **Server-side Pagination** baseada em n
 - **Fluxo**: 
   1. No carregamento inicial ou troca de categoria, a página é resetada para `1`.
   2. Ao clicar em "Carregar Mais", o estado interno do componente incrementa a página (`_currentPage++`).
-  3. A nova lista de artigos retornada pela API é anexada (`AddRange`) à lista existente na UI, criando o efeito de rolagem contínua.
+  3. A nova lista de artigos retornada pela API é iterada e apenas os artigos com URLs inéditas são adicionados à lista existente na UI, prevenindo itens duplicados e erros de chave no Blazor.
+
+Adicionalmente, na camada de Infraestrutura (`NewsApiService`), os dados brutos da API passam por uma deduplicação por URL (`GroupBy(a => a.Url).Select(g => g.First())`) antes de receberem seus GUIDs determinísticos, garantindo a integridade dos identificadores únicos.
 
 ## 2. Filtros e Busca por Palavra-Chave
 

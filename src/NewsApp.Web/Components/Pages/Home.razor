@@ -1,5 +1,4 @@
 @page "/"
-@rendermode InteractiveServer
 
 <PageTitle>Home - NewsApp</PageTitle>
 
@@ -58,6 +57,12 @@
                 }
             </MudButton>
         </div>
+    }
+    else if (!isSyncing)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-8">
+            Nenhuma notícia encontrada para os critérios selecionados.
+        </MudAlert>
     }
 
     <MudScrollToTop>

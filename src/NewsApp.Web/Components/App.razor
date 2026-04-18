@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -15,9 +15,47 @@
 </head>
 
 <body>
-    <Routes />
+    <MudThemeProvider Theme="_theme" @bind-IsDarkMode="_isDarkMode" @rendermode="InteractiveServer" />
+    <MudDialogProvider @rendermode="InteractiveServer" />
+    <MudSnackbarProvider @rendermode="InteractiveServer" />
+    <MudPopoverProvider @rendermode="InteractiveServer" />
+    
+    <Routes @rendermode="InteractiveServer" />
+    
     <script src="_framework/blazor.web.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 </body>
 
 </html>
+
+@code {
+    private bool _isDarkMode = false;
+
+    private MudTheme _theme = new MudTheme()
+    {
+        PaletteLight = new PaletteLight()
+        {
+            Primary = "#594AE2",
+            Background = "#F7F8FA",
+            AppbarBackground = "#FFFFFF",
+            Surface = "#FFFFFF",
+            DrawerBackground = "#FFFFFF",
+            TextPrimary = "#2D2D2D",
+        },
+        PaletteDark = new PaletteDark()
+        {
+            Primary = "#594AE2",
+            Background = "#1E1E2D",
+            AppbarBackground = "#1E1E2D",
+            Surface = "#2D2D3B",
+            TextPrimary = "#F0F0F0",
+        },
+        Typography = new Typography()
+        {
+            Default = new DefaultTypography()
+            {
+                FontFamily = new[] { "Roboto", "Inter", "Helvetica", "Arial", "sans-serif" }
+            }
+        }
+    };
+}

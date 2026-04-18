@@ -52,3 +52,6 @@ secrets.json
 # Environment files
 .env
 *.env
+
+# Local utility scripts
+run.ps1

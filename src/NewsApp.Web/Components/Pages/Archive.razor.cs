@@ -27,16 +27,24 @@ public partial class Archive
 
     private async Task LoadArchive()
     {
-        isLoading = true;
-        // Buscamos todas as notícias e filtramos pelas que estão no StateManager
-        var allArticles = await NewsUseCase.ExecuteAsync();
-        var readIds = StateManager.GetReadArticleIds();
-        
-        readArticles = allArticles
-            .Where(a => readIds.Contains(a.Id))
-            .ToList();
+        try 
+        {
+            Console.WriteLine("DEBUG: Archive - LoadArchive started");
+            isLoading = true;
+            await Task.Delay(200);
             
-        isLoading = false;
+            Console.WriteLine("DEBUG: Archive - Fetching read articles");
+            readArticles = StateManager.GetReadArticles().ToList();
+            
+            Console.WriteLine($"DEBUG: Archive - Found {readArticles.Count} articles");
+            isLoading = false;
+            Console.WriteLine("DEBUG: Archive - LoadArchive finished");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"DEBUG: Archive ERROR - {ex.Message}");
+            isLoading = false;
+        }
     }
 
     private void UnmarkAsRead(Guid id)

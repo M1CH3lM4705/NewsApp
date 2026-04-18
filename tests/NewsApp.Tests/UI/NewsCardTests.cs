@@ -83,7 +83,7 @@ public class NewsCardTests : BunitContext, IAsyncLifetime
         await button.ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
 
         // Assert
-        mockStateManager.Verify(m => m.MarkAsRead(article.Id), Times.Once);
+        mockStateManager.Verify(m => m.MarkAsRead(It.Is<NewsArticle>(a => a.Id == article.Id)), Times.Once);
         this.JSInterop.VerifyInvoke("open", 1);
         
         // Aguarda a execução da callback usando WaitForState ou WaitForAssertion

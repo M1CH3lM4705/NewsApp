@@ -41,12 +41,18 @@ public class Candidate
     public Content Content { get; set; } = new();
 }
 
-// DTO para a estrutura JSON retornada pelo Gemini dentro do campo "text"
-public class TranslatedArticleDto
+public class BulkTranslationResponse
 {
-    [JsonPropertyName("translatedTitle")]
-    public string TranslatedTitle { get; set; } = string.Empty;
+    [JsonPropertyName("translations")]
+    public List<GeminiTranslationItem> Translations { get; set; } = new();
+}
 
-    [JsonPropertyName("shortSummary")]
-    public string ShortSummary { get; set; } = string.Empty;
+public class GeminiTranslationItem
+{
+    [JsonPropertyName("url")]
+    public string Url { get; set; } = string.Empty;
+    [JsonPropertyName("title")]
+    public string Title { get; set; } = string.Empty;
+    [JsonPropertyName("summary")]
+    public string Summary { get; set; } = string.Empty;
 }

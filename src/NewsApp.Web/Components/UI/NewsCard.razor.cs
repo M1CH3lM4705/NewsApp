@@ -24,7 +24,7 @@ public partial class NewsCard
     private async Task HandleAccess()
     {
         // 1. Marca como lida no estado (Servidor)
-        StateManager.MarkAsRead(Article.Id);
+        StateManager.MarkAsRead(Article);
 
         // 2. Dispara animação visual local
         _isRead = true;

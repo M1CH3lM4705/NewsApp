@@ -1,28 +1,43 @@
 using NewsApp.Application.Interfaces;
+using NewsApp.Domain.Entities;
 
 namespace NewsApp.Application.Services;
 
 public class NewsStateManager : INewsStateManager
 {
-    private readonly HashSet<Guid> _readArticles = new();
+    private readonly Dictionary<Guid, NewsArticle> _readArticles = new();
+
+    public event Action? OnStateChanged;
+
+    public IEnumerable<NewsArticle> GetReadArticles()
+    {
+        return _readArticles.Values.OrderByDescending(a => a.PublishedAt);
+    }
 
     public HashSet<Guid> GetReadArticleIds()
     {
-        return _readArticles;
+        return _readArticles.Keys.ToHashSet();
     }
 
-    public void MarkAsRead(Guid articleId)
+    public void MarkAsRead(NewsArticle article)
     {
-        _readArticles.Add(articleId);
+        if (!_readArticles.ContainsKey(article.Id))
+        {
+            _readArticles.Add(article.Id, article);
+            OnStateChanged?.Invoke();
+        }
     }
 
     public void MarkAsUnread(Guid articleId)
     {
-        _readArticles.Remove(articleId);
+        if (_readArticles.Remove(articleId))
+        {
+            OnStateChanged?.Invoke();
+        }
     }
 
     public bool IsRead(Guid articleId)
     {
-        return _readArticles.Contains(articleId);
+        return _readArticles.ContainsKey(articleId);
     }
 }

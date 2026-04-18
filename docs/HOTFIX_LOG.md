@@ -34,3 +34,16 @@ Não havia uma forma do usuário visualizar o que já foi lido ou recuperar uma 
 - Criamos a página `Archive.razor` com a rota `/lidas`.
 - Adicionamos o método `MarkAsUnread` no `INewsStateManager`.
 - Implementamos uma tabela de histórico que permite a **Restauração** da notícia, removendo-a do histórico e fazendo-a reaparecer no feed principal instantaneamente através do estado compartilhado (`Scoped`).
+
+## 4. Correção de Chaves Duplicadas (Blazor) e Fallback do Gemini
+
+### Problema
+A aplicação apresentava o erro "System.InvalidOperationException: More than one sibling of component 'MudBlazor.MudItem' has the same key value" resultando em uma tela de erro 500. Isso ocorria simultaneamente a um erro no `GeminiTranslationService` ("Sequence contains no matching element").
+
+### Causa
+A NewsAPI ocasionalmente retorna a mesma notícia (mesma URL) mais de uma vez na mesma resposta. Como o `Id` das entidades era gerado deterministicamente a partir do hash da URL, artigos duplicados recebiam o mesmo `Id`, violando a regra de chaves únicas (`@key`) do laço `@foreach` no componente `NewsList.razor`. Além disso, a tradução em lote (`Bulk`) do Gemini assumia que todos os itens seriam sempre traduzidos e retornados (`.First()`); se o Gemini omitisse ou alterasse sutilmente a URL de um artigo no JSON de resposta, ocorria uma exceção que invalidava todo o lote.
+
+### Solução
+- **Deduplicação na Infraestrutura**: Atualizamos o `NewsApiService` para filtrar os resultados brutos aplicando um `GroupBy(a => a.Url).Select(g => g.First())` antes de gerar os GUIDs.
+- **Proteção no Estado da UI**: Modificamos o método `SyncNews` no `Home.razor.cs` para adicionar artigos ao estado `_articles` apenas se suas URLs ainda não existirem na lista (substituindo o antigo `AddRange`).
+- **Resiliência na Tradução**: No `GeminiTranslationService`, alteramos o mapeamento do resultado bulk de `.First()` para `.FirstOrDefault()`, ignorando itens omitidos e permitindo que o sistema caia suavemente no comportamento de Fallback (retornando as notícias originais não traduzidas) em vez de causar um crash completo.
