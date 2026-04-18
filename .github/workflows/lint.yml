@@ -1,0 +1,25 @@
+name: Lint and Static Analysis
+
+on:
+  pull_request:
+    branches: [ "development", "staging", "production" ]
+
+jobs:
+  build-and-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore de dependências
+        run: dotnet restore
+
+      # Este comando agora valida o .editorconfig E os Roslyn Analyzers
+      # por causa das flags que adicionamos no Directory.Build.props
+      - name: Build e Análise Estática
+        run: dotnet build --configuration Release --no-restore
