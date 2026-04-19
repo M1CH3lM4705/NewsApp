@@ -1,3 +1,4 @@
+using NewsApp.SharedUI.Components;
 using NewsApp.Web.Components;
 using NewsApp.Application.Configuration;
 using NewsApp.Application.Interfaces;

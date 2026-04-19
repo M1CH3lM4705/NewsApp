@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 using NewsApp.Application.Interfaces;
 using NewsApp.Domain.Entities;
 
-namespace NewsApp.Web.Components.UI;
+namespace NewsApp.SharedUI.Components.UI;
 
 public partial class NewsList : IDisposable
 {

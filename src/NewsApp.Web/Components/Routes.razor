@@ -1,6 +1,8 @@
-﻿<Router AppAssembly="typeof(Program).Assembly">
+@using NewsApp.SharedUI.Components.Pages
+
+<Router AppAssembly="typeof(Home).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+        <RouteView RouteData="routeData" DefaultLayout="typeof(NewsApp.SharedUI.Components.Layout.MainLayout)" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
 </Router>

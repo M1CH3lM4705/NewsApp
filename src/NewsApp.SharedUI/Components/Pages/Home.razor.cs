@@ -3,7 +3,7 @@ using NewsApp.Application.DTOs;
 using NewsApp.Application.UseCases;
 using NewsApp.Domain.Entities;
 
-namespace NewsApp.Web.Components.Pages;
+namespace NewsApp.SharedUI.Components.Pages;
 
 public partial class Home
 {
