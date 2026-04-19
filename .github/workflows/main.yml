@@ -1,0 +1,57 @@
+name: NewsApp CI/CD
+
+on:
+  push:
+    branches: [ "production", "development" ]
+
+jobs:
+  # 1. Verificação de Qualidade e Análise
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Code Analysis
+        run: dotnet build /p:ReportAnalyzer=true # Ou comando do SonarCloud
+
+  # 2. Execução de Testes Unitários e Integração
+  test:
+    needs: analyze # Só roda se a análise passar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Tests
+        run: dotnet test --configuration Release --verbosity normal
+
+  # 3. Build do APK (Só executa se testes passarem e for na branch production)
+  build-android:
+    needs: test
+    if: github.ref == 'refs/heads/production'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      # Injeção das suas variáveis de ambiente (Secrets)
+      - name: Create AppSettings
+        run: |
+          echo '{
+            "AppConfiguration": {
+              "NewsApiKey": "${{ secrets.NEWS_API_KEY }}",
+              "GeminiApiKey": "${{ secrets.GEMINI_API_KEY }}"
+            }
+          }' > NewsApp.Web/wwwroot/appsettings.json
+
+      - name: Install MAUI Workload
+        run: dotnet workload install maui-android
+        
+      - name: Publish APK
+        run: dotnet publish NewsApp.Mobile/NewsApp.Mobile.csproj -c Release -f net9.0-android
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NewsApp-Release
+          path: NewsApp.Mobile/bin/Release/net9.0-android/*-Signed.apk
