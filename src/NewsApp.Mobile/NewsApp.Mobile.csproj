@@ -46,6 +46,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\NewsApp.Application\NewsApp.Application.csproj" />
 		<ProjectReference Include="..\NewsApp.Infrastructure\NewsApp.Infrastructure.csproj" />
+		<ProjectReference Include="..\NewsApp.Web\NewsApp.Web.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

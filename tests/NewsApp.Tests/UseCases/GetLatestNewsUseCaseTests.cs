@@ -1,4 +1,5 @@
 using Moq;
+using NewsApp.Application.DTOs;
 using NewsApp.Application.Interfaces;
 using NewsApp.Application.UseCases;
 using NewsApp.Domain.Entities;
@@ -32,7 +33,7 @@ public class GetLatestNewsUseCaseTests
         var useCase = new GetLatestNewsUseCase(mockRepository.Object, mockGemini.Object);
 
         // Act
-        var result = await useCase.ExecuteAsync(null, null, 1, 10);
+        var result = await useCase.ExecuteAsync(new GetLatestNewsRequest { Category = null, Query = null, Page = 1, PageSize = 10 });
 
         // Assert
         Assert.NotNull(result);
@@ -61,9 +62,9 @@ public class GetLatestNewsUseCaseTests
 
         // Act
         // Primeira chamada: busca no repositório
-        var result1 = await useCase.ExecuteAsync(category, null, 1, 10);
+        var result1 = await useCase.ExecuteAsync(new GetLatestNewsRequest { Category = category, Query = null, Page = 1, PageSize = 10 });
         // Segunda chamada: deve retornar do cache
-        var result2 = await useCase.ExecuteAsync(category, null, 1, 10);
+        var result2 = await useCase.ExecuteAsync(new GetLatestNewsRequest { Category = category, Query = null, Page = 1, PageSize = 10 });
 
         // Assert
         Assert.Equal(result1, result2);
