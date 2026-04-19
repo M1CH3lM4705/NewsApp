@@ -1,0 +1,72 @@
+name: NewsApp CI/CD
+
+on:
+  push:
+    branches: [ "production", "development" ]
+
+jobs:
+  # 1. Verificação de Qualidade e Análise
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore
+        run: dotnet restore NewsApp.Backend.slnf
+      - name: Code Analysis
+        run: dotnet build NewsApp.Backend.slnf --no-restore /p:ReportAnalyzer=true
+
+  # 2. Execução de Testes Unitários e Integração
+  test:
+    needs: analyze # Só roda se a análise passar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Restore
+        run: dotnet restore NewsApp.Backend.slnf
+      - name: Run Tests
+        run: dotnet test NewsApp.Backend.slnf --no-restore --configuration Release --verbosity normal
+
+  # 3. Build do APK (Só executa se testes passarem e for na branch production)
+  build-android:
+    needs: test
+    if: github.ref == 'refs/heads/production'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      # Injeção das suas variáveis de ambiente (Secrets)
+      - name: Create AppSettings
+        run: |
+          if (!(Test-Path "src/NewsApp.Web/wwwroot")) { New-Item -ItemType Directory -Force -Path "src/NewsApp.Web/wwwroot" }
+          $settings = @{
+            AppConfiguration = @{
+              NewsApiKey = "${{ secrets.NEWS_API_KEY }}"
+              GeminiApiKey = "${{ secrets.GEMINI_API_KEY }}"
+            }
+          }
+          $settings | ConvertTo-Json | Out-File -FilePath "src/NewsApp.Web/wwwroot/appsettings.json" -Encoding utf8
+
+      - name: Install MAUI Workload
+        run: dotnet workload install maui-android
+        
+      - name: Publish APK
+        run: dotnet publish src/NewsApp.Mobile/NewsApp.Mobile.csproj -c Release -f net9.0-android
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NewsApp-Release
+          path: src/NewsApp.Mobile/bin/Release/net9.0-android/*-Signed.apk

@@ -1,0 +1,19 @@
+<div class="news-list">
+    @if (!_filteredArticles.Any())
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">
+            Nenhuma notícia nova no momento.
+        </MudAlert>
+    }
+    else
+    {
+        <MudGrid Spacing="3">
+            @foreach (var article in _filteredArticles)
+            {
+                <MudItem xs="12" sm="12" md="6" lg="4" @key="article.Id">
+                    <NewsCard Article="article" OnRead="RefreshList" />
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</div>
