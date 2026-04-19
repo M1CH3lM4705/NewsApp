@@ -4,7 +4,7 @@ using NewsApp.Application.Interfaces;
 using NewsApp.Application.UseCases;
 using NewsApp.Domain.Entities;
 
-namespace NewsApp.Web.Components.Pages;
+namespace NewsApp.SharedUI.Components.Pages;
 
 public partial class Archive
 {

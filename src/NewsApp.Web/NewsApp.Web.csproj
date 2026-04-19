@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\NewsApp.Application\NewsApp.Application.csproj" />
     <ProjectReference Include="..\NewsApp.Infrastructure\NewsApp.Infrastructure.csproj" />
+    <ProjectReference Include="..\NewsApp.SharedUI\NewsApp.SharedUI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
