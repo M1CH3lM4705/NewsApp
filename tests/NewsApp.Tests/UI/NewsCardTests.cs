@@ -5,7 +5,7 @@ using MudBlazor;
 using MudBlazor.Services;
 using NewsApp.Application.Interfaces;
 using NewsApp.Domain.Entities;
-using NewsApp.Web.Components.UI;
+using NewsApp.SharedUI.Components.UI;
 using Xunit;
 
 namespace NewsApp.Tests.UI;
