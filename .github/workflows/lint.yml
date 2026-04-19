@@ -16,6 +16,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Decouple Mobile Project (Avoid NETSDK1147)
+        run: dotnet sln remove src/NewsApp.Mobile/NewsApp.Mobile.csproj
+
       - name: Restore de dependências
         run: dotnet restore
 

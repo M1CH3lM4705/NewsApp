@@ -15,8 +15,8 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
-      - name: Install MAUI Workloads
-        run: dotnet workload install maui-android
+      - name: Decouple Mobile Project (Avoid NETSDK1147)
+        run: dotnet sln remove src/NewsApp.Mobile/NewsApp.Mobile.csproj
 
       - name: Restore
         run: dotnet restore
