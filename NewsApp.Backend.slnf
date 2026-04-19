@@ -5,6 +5,7 @@
       "src\\NewsApp.Application\\NewsApp.Application.csproj",
       "src\\NewsApp.Domain\\NewsApp.Domain.csproj",
       "src\\NewsApp.Infrastructure\\NewsApp.Infrastructure.csproj",
+      "src\\NewsApp.SharedUI\\NewsApp.SharedUI.csproj",
       "src\\NewsApp.Web\\NewsApp.Web.csproj",
       "tests\\NewsApp.Tests\\NewsApp.Tests.csproj"
     ]

@@ -3,14 +3,17 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copiar arquivos de solução e projetos para restaurar dependências
+# Usaremos o NewsApp.Backend.slnf para restaurar apenas o necessário para o Web
 COPY ["NewsApp.sln", "./"]
+COPY ["NewsApp.Backend.slnf", "./"]
 COPY ["src/NewsApp.Web/NewsApp.Web.csproj", "src/NewsApp.Web/"]
 COPY ["src/NewsApp.Application/NewsApp.Application.csproj", "src/NewsApp.Application/"]
 COPY ["src/NewsApp.Infrastructure/NewsApp.Infrastructure.csproj", "src/NewsApp.Infrastructure/"]
 COPY ["src/NewsApp.Domain/NewsApp.Domain.csproj", "src/NewsApp.Domain/"]
+COPY ["src/NewsApp.SharedUI/NewsApp.SharedUI.csproj", "src/NewsApp.SharedUI/"]
 COPY ["tests/NewsApp.Tests/NewsApp.Tests.csproj", "tests/NewsApp.Tests/"]
 
-RUN dotnet restore
+RUN dotnet restore NewsApp.Backend.slnf
 
 # Copiar o restante dos arquivos e buildar
 COPY . .

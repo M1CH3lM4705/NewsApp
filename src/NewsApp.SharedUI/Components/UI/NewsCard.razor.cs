@@ -3,7 +3,7 @@ using Microsoft.JSInterop;
 using NewsApp.Application.Interfaces;
 using NewsApp.Domain.Entities;
 
-namespace NewsApp.Web.Components.UI;
+namespace NewsApp.SharedUI.Components.UI;
 
 public partial class NewsCard
 {
