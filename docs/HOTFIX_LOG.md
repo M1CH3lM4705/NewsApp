@@ -11,9 +11,9 @@ O build do GitHub Actions falhava com o erro `NETSDK1147` ao tentar restaurar a 
 O comando `dotnet restore` em uma solução tenta resolver dependências de todos os projetos nela contidos. Projetos MAUI com `net9.0-android` possuem dependências de SDKs nativos que não são necessários para validar a lógica de domínio, aplicação ou a interface web.
 
 ### Solução
-- **Isolamento Dinâmico**: Implementamos o comando `dotnet sln remove src/NewsApp.Mobile/NewsApp.Mobile.csproj` nos workflows de `tests.yml` e `lint.yml` imediatamente antes do restore. Isso remove o projeto mobile da solução temporariamente apenas durante a execução no runner, sem alterar o arquivo `.sln` no repositório.
+- **Solution Filter (SLNF)**: Criamos o arquivo `NewsApp.Backend.slnf` que inclui apenas os projetos de core e testes, excluindo explicitamente o projeto mobile. Os workflows de CI (`tests.yml` e `lint.yml`) foram atualizados para executar comandos contra este filtro em vez da solução completa. Isso garante que o `dotnet restore` e `dotnet build` nunca tentem processar o projeto Mobile no ambiente de CI.
 - **Estabilização do SDK**: Criamos um arquivo `global.json` na raiz do projeto fixando o SDK na versão `9.0.100` com `rollForward: latestFeature` para garantir consistência entre o desenvolvimento local e o ambiente de CI.
-- **Resultado**: A esteira de CI agora valida apenas o core do sistema (Web, Application, Domain, Infrastructure e Tests), mantendo-se rápida, confiável e independente de SDKs mobile pesados.
+- **Resultado**: A esteira de CI agora valida apenas o core do sistema (Web, Application, Domain, Infrastructure e Tests), mantendo-se rápida, confiável e totalmente imune ao erro `NETSDK1147`.
 
 ## 1. Correção de Espaçamento no Grid de Notícias
 
