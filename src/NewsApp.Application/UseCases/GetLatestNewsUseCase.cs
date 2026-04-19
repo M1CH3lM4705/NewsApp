@@ -1,3 +1,4 @@
+using NewsApp.Application.DTOs;
 using NewsApp.Application.Interfaces;
 using NewsApp.Domain.Entities;
 using System.Collections.Concurrent;
@@ -18,16 +19,16 @@ public class GetLatestNewsUseCase : IGetLatestNewsUseCase
         _geminiService = geminiService;
     }
 
-    public async Task<IEnumerable<NewsArticle>> ExecuteAsync(string? category = null, string? query = null, int page = 1, int pageSize = 10)
+    public async Task<IEnumerable<NewsArticle>> ExecuteAsync(GetLatestNewsRequest request)
     {
-        var cacheKey = $"{category}-{query}-{page}-{pageSize}";
+        var cacheKey = $"{request.Category}-{request.Query}-{request.Page}-{request.PageSize}";
         
         if (_cache.TryGetValue(cacheKey, out var cacheEntry) && cacheEntry.Expiry > DateTime.UtcNow)
         {
             return cacheEntry.Articles;
         }
 
-        var articles = await _newsRepository.GetArticlesAsync(category, query, page, pageSize);
+        var articles = await _newsRepository.GetArticlesAsync(request.Category, request.Query, request.Page, request.PageSize);
         
         // Chamada ao Gemini para tradução e resumo
         var translatedArticles = await _geminiService.TranslateArticlesAsync(articles);

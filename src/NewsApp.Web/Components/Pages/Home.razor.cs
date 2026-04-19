@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using NewsApp.Application.DTOs;
 using NewsApp.Application.UseCases;
 using NewsApp.Domain.Entities;
 
@@ -50,7 +51,14 @@ public partial class Home
         // Simulando delay de rede para UX
         await Task.Delay(500);
         
-        var newArticles = await NewsUseCase.ExecuteAsync(_selectedCategory, _searchQuery, _currentPage, PageSize);
+        var request = new GetLatestNewsRequest 
+        { 
+            Category = _selectedCategory, 
+            Query = _searchQuery, 
+            Page = _currentPage, 
+            PageSize = PageSize 
+        };
+        var newArticles = await NewsUseCase.ExecuteAsync(request);
         foreach (var article in newArticles)
         {
             if (!_articles.Any(a => a.Url == article.Url))
