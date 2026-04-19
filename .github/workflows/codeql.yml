@@ -5,6 +5,7 @@ on:
     branches: [ "development", "staging", "production" ]
   pull_request:
     # A análise roda sempre que um PR for aberto para as branches principais
+    types: [opened, synchronize, reopened]
     branches: [ "development", "staging", "production" ]
   schedule:
     - cron: '30 1 * * 1' # Roda toda segunda-feira à 1:30 da manhã por segurança
