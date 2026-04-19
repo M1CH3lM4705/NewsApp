@@ -1,5 +1,6 @@
 using NewsApp.Application.Interfaces;
 using NewsApp.Domain.Entities;
+using System.Collections.Concurrent;
 
 namespace NewsApp.Application.UseCases;
 
@@ -7,7 +8,8 @@ public class GetLatestNewsUseCase : IGetLatestNewsUseCase
 {
     private readonly INewsRepository _newsRepository;
     private readonly IGeminiTranslationService _geminiService;
-    private static readonly Dictionary<string, (DateTime Expiry, IEnumerable<NewsArticle> Articles)> _cache = new();
+    private static readonly ConcurrentDictionary<string, (DateTime Expiry, IEnumerable<NewsArticle> Articles)> _cache =
+    new();
     private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
     public GetLatestNewsUseCase(INewsRepository newsRepository, IGeminiTranslationService geminiService)
