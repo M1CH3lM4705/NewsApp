@@ -1,0 +1,16 @@
+.news-card-wrapper {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    opacity: 1;
+    transform: scale(1);
+}
+
+.news-card-wrapper.fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+    pointer-events: none;
+}
+
+.news-summary {
+    font-style: italic;
+    color: var(--mud-palette-text-secondary);
+}

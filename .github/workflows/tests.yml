@@ -1,0 +1,31 @@
+name: Unit Tests & Coverage
+
+on:
+  pull_request:
+    branches: [ "development", "staging", "production" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore NewsApp.Backend.slnf
+
+      # Executa os testes e gera o relatório no formato lcov
+      - name: Run Tests with Coverage
+        run: dotnet test NewsApp.Backend.slnf --no-restore --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=lcov /p:CoverletOutput=./lcov.info
+
+      # Publica o relatório de cobertura como um comentário no PR
+      - name: Report Coverage
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lcov-file: ./**/lcov.info
+          filter-changed-files: true # Foca no que mudou no PR

@@ -1,0 +1,49 @@
+@page "/lidas"
+
+<PageTitle>Histórico - NewsApp</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="mt-8">
+    <MudText Typo="Typo.h4" Color="Color.Primary" GutterBottom="true"><b>Histórico de Notícias Lidas</b></MudText>
+    <MudText Typo="Typo.body1" Class="mb-8">Gerencie as notícias que você já visualizou. Você pode restaurá-las para o feed se desejar.</MudText>
+
+    @if (isLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+    }
+    else if (!readArticles.Any())
+    {
+        <MudAlert Severity="Severity.Normal" Variant="Variant.Filled" Class="mt-4">
+            Seu histórico está vazio.
+        </MudAlert>
+    }
+    else
+    {
+        <MudPaper Elevation="0" Outlined="true">
+            <MudSimpleTable Style="overflow-x: auto;">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Título</th>
+                        <th style="width: 100px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var article in readArticles)
+                    {
+                        <tr>
+                            <td>@article.PublishedAt.ToString("dd/MM/yyyy")</td>
+                            <td>@article.Title</td>
+                            <td>
+                                <MudTooltip Text="Restaurar para o feed">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Restore" 
+                                                   Color="Color.Info" 
+                                                   OnClick="@(() => UnmarkAsRead(article.Id))" />
+                                </MudTooltip>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </MudSimpleTable>
+        </MudPaper>
+    }
+</MudContainer>

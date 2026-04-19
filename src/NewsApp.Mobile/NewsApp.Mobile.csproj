@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFrameworks>net9.0-android</TargetFrameworks>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>NewsApp.Mobile</RootNamespace>
+		<UseMaui>true</UseMaui>
+		<SingleProject>true</SingleProject>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+		<Nullable>enable</Nullable>
+
+		<!-- Identidade do App -->
+		<ApplicationTitle>NewsApp</ApplicationTitle>
+		<ApplicationId>com.companyname.newsapp</ApplicationId>
+		<ApplicationIdGuid>f7b1e4c2-0cf3-4f50-a148-e3c7c5aab2e8</ApplicationIdGuid>
+		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+		<ApplicationVersion>1</ApplicationVersion>
+
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+	</PropertyGroup>
+
+	<!-- Configuração de Segurança: Variáveis Embutidas -->
+	<ItemGroup>
+		<EmbeddedResource Include="appsettings.development.json" />
+		<EmbeddedResource Include="appsettings.production.json" />
+	</ItemGroup>
+
+	<!-- Injeção de Segredos em Tempo de Build (CI/CD) -->
+	<!-- Use via CLI: dotnet publish -p:NewsApiKey="SuaChave" -p:GeminiApiKey="SuaChave" -->
+	<Target Name="InjectSecrets" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release' And '$(NewsApiKey)' != ''">
+		<ItemGroup>
+			<AppsettingsLine Include="{ &quot;AppConfiguration&quot;: { &quot;NewsApiKey&quot;: &quot;$(NewsApiKey)&quot;, &quot;GeminiApiKey&quot;: &quot;$(GeminiApiKey)&quot; } }" />
+		</ItemGroup>
+		<WriteLinesToFile File="appsettings.production.json" Lines="@(AppsettingsLine)" Overwrite="true" Encoding="UTF-8" />
+	</Target>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
+		<PackageReference Include="MudBlazor" Version="9.3.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\NewsApp.Application\NewsApp.Application.csproj" />
+		<ProjectReference Include="..\NewsApp.Infrastructure\NewsApp.Infrastructure.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="..\NewsApp.Web\wwwroot\**" Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+</Project>

@@ -1,0 +1,60 @@
+.archive-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.archive-header h1 {
+    color: #052767;
+    margin-bottom: 0.5rem;
+}
+
+.archive-header p {
+    color: #666;
+    margin-bottom: 2rem;
+}
+
+.read-list {
+    list-style: none;
+    padding: 0;
+}
+
+.read-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+}
+
+.read-item:hover {
+    background: #f5f5f5;
+}
+
+.bullet {
+    width: 8px;
+    height: 8px;
+    background: #3a0647;
+    border-radius: 50%;
+    margin-right: 1rem;
+}
+
+.read-title {
+    color: #444;
+    font-size: 1.1rem;
+}
+
+.empty-archive {
+    text-align: center;
+    padding: 2rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+    color: #888;
+}
+
+.loader {
+    text-align: center;
+    font-style: italic;
+    color: #052767;
+}
