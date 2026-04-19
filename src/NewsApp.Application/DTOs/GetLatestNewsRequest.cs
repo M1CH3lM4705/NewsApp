@@ -1,0 +1,9 @@
+namespace NewsApp.Application.DTOs;
+
+public class GetLatestNewsRequest
+{
+    public string? Category { get; set; }
+    public string? Query { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+}
