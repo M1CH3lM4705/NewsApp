@@ -1,6 +1,8 @@
+global using Application = Microsoft.Maui.Controls.Application;
+
 namespace NewsApp.Mobile;
 
-public partial class App : Microsoft.Maui.Controls.Application
+public partial class App : Application
 {
 	public App()
 	{

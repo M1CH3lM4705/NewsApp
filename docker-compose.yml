@@ -9,7 +9,7 @@ services:
     env_file:
       - local.env
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       # As variáveis no local.env devem seguir o padrão:
       # AppConfiguration__NewsApiKey=...
       # AppConfiguration__GeminiApiKey=...
