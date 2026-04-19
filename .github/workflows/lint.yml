@@ -17,9 +17,9 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore de dependências
-        run: dotnet restore
+        run: dotnet restore NewsApp.Backend.slnf
 
       # Este comando agora valida o .editorconfig E os Roslyn Analyzers
       # por causa das flags que adicionamos no Directory.Build.props
       - name: Build e Análise Estática
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build NewsApp.Backend.slnf --configuration Release --no-restore
