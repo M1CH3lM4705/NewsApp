@@ -1,50 +1,41 @@
-# Integração com Gemini AI - NewsApp
+# Integração com IA e Sistema de Failover - NewsApp
 
-Este documento detalha como o **NewsApp** utiliza a Inteligência Artificial (Google Gemini) para traduzir e resumir notícias em tempo real.
+Este documento detalha como o **NewsApp** utiliza Inteligência Artificial (Google Gemini e OpenRouter) para traduzir e resumir notícias em tempo real, garantindo alta disponibilidade através de um fluxo de failover automático.
 
-## 1. System Prompt
+## 1. Arquitetura de Tradução
 
-Para garantir que a IA se comporte como um tradutor jornalístico e retorne dados estruturados, utilizamos o seguinte **System Prompt**:
+O sistema utiliza o padrão **Proxy/Orchestrator** para gerenciar múltiplos provedores de IA. A lógica comum de cache, processamento de prompt e desserialização é centralizada em uma classe base abstrata.
+
+### Fluxo de Decisão (TranslationOrchestrator)
+1.  **Tentativa Primária (Gemini)**: O sistema tenta realizar a tradução utilizando o `GeminiTranslationService`.
+2.  **Detecção de Quota (Erro 429)**: Caso o Gemini retorne um erro de excesso de requisições, o orquestrador captura a exceção especificamente.
+3.  **Failover Automático (OpenRouter)**: O sistema aciona o `OpenRouterTranslationService` utilizando o modelo `qwen/qwen3-coder:free` como backup imediato.
+4.  **Fallback Final**: Se ambos os serviços falharem ou estiverem indisponíveis, o sistema retorna os artigos originais (em inglês), garantindo que o usuário nunca seja interrompido por erros técnicos de IA.
+
+## 2. System Prompt Unificado
+
+Para manter a consistência entre diferentes modelos de linguagem, utilizamos um prompt centralizado na `BaseTranslationService`:
 
 > "Você é um tradutor jornalístico. Traduza os títulos para português e gere resumos de no máximo 3 linhas em português. Receba uma lista de notícias e retorne um objeto JSON contendo um array chamado 'translations'. Cada item do array deve ter: 'url' (id único), 'title' e 'summary'."
 
-## 2. Mapeamento de Dados (JSON to C#)
+## 3. Provedores e Modelos
 
-O Gemini é instruído via System Prompt a retornar um objeto JSON contendo as traduções. Esse JSON é mapeado para as classes `BulkTranslationResponse` e `GeminiTranslationItem`:
+| Provedor | Modelo | Papel | Notas |
+| :--- | :--- | :--- | :--- |
+| **Google Gemini** | `gemini-2.5-flash-lite` | Primário | Alta performance e precisão no formato JSON. |
+| **OpenRouter** | `qwen/qwen3-coder:free` | Backup | Modelo robusto para instruções de formato (JSON) e código. |
 
-```csharp
-public class BulkTranslationResponse
-{
-    [JsonPropertyName("translations")]
-    public List<GeminiTranslationItem> Translations { get; set; } = new();
-}
-
-public class GeminiTranslationItem
-{
-    [JsonPropertyName("url")]
-    public string Url { get; set; } = string.Empty;
-    [JsonPropertyName("title")]
-    public string Title { get; set; } = string.Empty;
-    [JsonPropertyName("summary")]
-    public string Summary { get; set; } = string.Empty;
-}
-```
-
-A classe `GeminiTranslationService` realiza a limpeza de eventuais blocos de Markdown (```json) e desserializa o conteúdo. É feito um mapeamento cuidadoso cruzando a `Url` original com a `Url` devolvida pelo Gemini (via `FirstOrDefault`) para garantir resiliência caso a IA omita algum item.
-
-## 3. Estratégias de Performance e Latência
-
-Como chamadas de IA podem ser lentas e caras, implementamos três níveis de otimização:
+## 4. Estratégias de Performance e Resiliência
 
 ### A. Cache em Memória (IMemoryCache)
-Antes de enviar qualquer notícia para o Gemini, o serviço verifica se o hash da URL da notícia já possui uma tradução armazenada em cache (TTL de 1 hora). Isso evita traduções repetidas da mesma notícia para diferentes usuários ou na mesma sessão.
+Implementado na classe base, o cache verifica o hash da URL da notícia antes de qualquer chamada externa. O tempo de vida (TTL) é de 1 hora, reduzindo drasticamente os custos e a latência.
 
 ### B. Processamento em Lote (Bulk Translation)
-Em vez de traduzir uma notícia por vez ou realizar múltiplas requisições paralelas (`Task.WhenAll`), enviamos a lista inteira de notícias não cacheadas em um único prompt para o Gemini. Isso otimiza drasticamente o uso da cota da API e reduz o overhead de rede.
+Ambos os serviços realizam traduções em lote. O sistema projeta apenas os campos necessários (`Url`, `Title`, `Description`) para o prompt, minimizando o consumo de tokens.
 
-### C. Fallback Resiliente
-Se a cota da API (Free Tier) for atingida, se a resposta for inválida, ou se a IA omitir algum artigo específico do lote, o sistema mapeia graciosamente as falhas e retorna a notícia original em inglês. Isso garante que a aplicação nunca fique indisponível devido a falhas na camada de IA.
+### C. Segurança e Headers
+- **OpenRouter**: Configurado com headers `HTTP-Referer` e `X-Title` para conformidade com a política da plataforma.
+- **Failover Transparente**: O usuário não percebe a troca de provedor, apenas a manutenção da funcionalidade.
 
-## 4. Limites do Tier Gratuito
-- **Modelo**: `gemini-2.5-flash-lite` (escolhido pela baixa latência e melhor capacidade de seguir o formato JSON em lotes).
-- **Taxa de Requisição**: Atualmente limitado a 15 RPM (requisições por minuto) no tier gratuito. O uso de paralelismo deve ser monitorado para não exceder esse limite em ambientes de alta carga.
+## 5. Limites e Configuração
+As chaves de API (`GeminiApiKey` e `OpenRouterApiKey`) são gerenciadas via `AppConfiguration` e devem ser configuradas via Variáveis de Ambiente ou User Secrets para evitar exposição.

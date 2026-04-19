@@ -7,6 +7,7 @@ using Moq;
 using Moq.Protected;
 using NewsApp.Application.Configuration;
 using NewsApp.Domain.Entities;
+using NewsApp.Domain.Exceptions;
 using NewsApp.Infrastructure.ExternalApis.Gemini;
 using NewsApp.Infrastructure.Services;
 using Xunit;
@@ -94,7 +95,7 @@ public class GeminiTranslationServiceTests
     }
 
     [Fact]
-    public async Task TranslateArticlesAsync_ShouldReturnOriginals_WhenApiFails()
+    public async Task TranslateArticlesAsync_ShouldThrowExternalServiceException_WhenApiFails()
     {
         // Arrange
         var articles = new List<NewsArticle> { new NewsArticle { Title = "Original", Url = "url" } };
@@ -105,11 +106,8 @@ public class GeminiTranslationServiceTests
 
         var service = new GeminiTranslationService(_httpClient, _config, _cache, _mockLogger.Object);
 
-        // Act
-        var result = await service.TranslateArticlesAsync(articles);
-
-        // Assert
-        Assert.Equal("Original", result.First().Title);
+        // Act & Assert
+        await Assert.ThrowsAsync<ExternalServiceException>(() => service.TranslateArticlesAsync(articles));
     }
 
     private void SetupMockResponse(string jsonText)

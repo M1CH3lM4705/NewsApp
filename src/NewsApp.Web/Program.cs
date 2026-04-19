@@ -1,3 +1,4 @@
+using NewsApp.SharedUI.Components.Pages;
 using NewsApp.SharedUI.Components;
 using NewsApp.Web.Components;
 using NewsApp.Application.Configuration;
@@ -51,11 +52,25 @@ builder.Services.AddHttpClient<INewsRepository, NewsApiService>(client =>
     client.DefaultRequestHeaders.Add("User-Agent", "NewsApp-DotNet");
 });
 
-builder.Services.AddHttpClient<IGeminiTranslationService, GeminiTranslationService>(client =>
+builder.Services.AddHttpClient<GeminiTranslationService>(client =>
 {
     client.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
 });
 
+builder.Services.AddHttpClient<OpenRouterTranslationService>(client =>
+{
+    client.BaseAddress = new Uri("https://openrouter.ai/");
+    client.DefaultRequestHeaders.Add("HTTP-Referer", "http://localhost:8085");
+    client.DefaultRequestHeaders.Add("X-Title", "NewsApp");
+    
+    var openRouterKey = builder.Configuration["AppConfiguration:OpenRouterApiKey"];
+    if (!string.IsNullOrEmpty(openRouterKey))
+    {
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", openRouterKey);
+    }
+});
+
+builder.Services.AddScoped<IGeminiTranslationService, TranslationOrchestrator>();
 builder.Services.AddScoped<IGetLatestNewsUseCase, GetLatestNewsUseCase>();
 builder.Services.AddScoped<INewsStateManager, NewsStateManager>();
 
@@ -85,9 +100,10 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseCors("SecurePolicy");
 app.UseRateLimiter();
@@ -96,6 +112,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode()
+    .AddAdditionalAssemblies(typeof(Home).Assembly);
 
 app.Run();
