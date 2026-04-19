@@ -15,6 +15,9 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Install MAUI Workloads
+        run: dotnet workload install maui-android
+
       - name: Restore
         run: dotnet restore
 
