@@ -42,8 +42,11 @@ jobs:
         dotnet-version: '9.0.x'
 
     # O CodeQL tenta buildar automaticamente o projeto para analisar o binário
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v3
+    # Substitua o 'uses: github/codeql-action/autobuild@v3' por isto:
+    - name: Custom Build for CodeQL
+      run: |
+        dotnet restore NewsApp.Backend.slnf
+        dotnet build NewsApp.Backend.slnf --no-restore -c Release
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
