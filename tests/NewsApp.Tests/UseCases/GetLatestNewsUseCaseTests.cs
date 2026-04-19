@@ -36,7 +36,7 @@ public class GetLatestNewsUseCaseTests
 
         // Assert
         Assert.NotNull(result);
-        // O UseCase agora retorna hoje e ontem, então as 3 notícias devem vir (2 de hoje, 1 de ontem)
+        
         Assert.Equal(3, result.Count());
     }
 
