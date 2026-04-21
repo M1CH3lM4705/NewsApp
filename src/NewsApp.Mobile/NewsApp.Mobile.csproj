@@ -21,8 +21,8 @@
 
 	<!-- Configuração de Segurança: Variáveis Embutidas -->
 	<ItemGroup>
-		<EmbeddedResource Include="appsettings.development.json" />
-		<EmbeddedResource Include="appsettings.production.json" />
+		<EmbeddedResource Include="appsettings.development.json" Condition="Exists('appsettings.development.json')" />
+		<EmbeddedResource Include="appsettings.production.json" Condition="Exists('appsettings.production.json')" />
 	</ItemGroup>
 
 	<!-- Injeção de Segredos em Tempo de Build (CI/CD) -->
