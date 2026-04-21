@@ -4,7 +4,7 @@
              xmlns:local="clr-namespace:NewsApp.Mobile"
              xmlns:blazor="clr-namespace:Microsoft.AspNetCore.Components.WebView.Maui;assembly=Microsoft.AspNetCore.Components.WebView.Maui"
              x:Class="NewsApp.Mobile.MainPage"
-             BackgroundColor="{StyleProperty BackgroundColor}">
+             BackgroundColor="White">
 
     <blazor:BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
         <blazor:BlazorWebView.RootComponents>
