@@ -52,21 +52,27 @@ public static class MauiProgram
 	private static void LoadEmbeddedConfiguration(MauiAppBuilder builder)
 	{
 		var assembly = Assembly.GetExecutingAssembly();
-		string configName = "NewsApp.Mobile.appsettings.production.json";
+		var configBuilder = new ConfigurationBuilder();
 
+		// Tenta carregar produção
+		using (var streamProd = assembly.GetManifestResourceStream("NewsApp.Mobile.appsettings.production.json"))
+		{
+			if (streamProd != null) configBuilder.AddJsonStream(streamProd);
+		}
+
+		// Tenta carregar development (sobrescreve produção se em DEBUG)
 #if DEBUG
-		configName = "NewsApp.Mobile.appsettings.development.json";
+		using (var streamDev = assembly.GetManifestResourceStream("NewsApp.Mobile.appsettings.development.json"))
+		{
+			if (streamDev != null) configBuilder.AddJsonStream(streamDev);
+		}
 #endif
 
-		using var stream = assembly.GetManifestResourceStream(configName);
-		if (stream != null)
-		{
-			var config = new ConfigurationBuilder()
-				.AddJsonStream(stream)
-				.Build();
+		// Adiciona suporte a variáveis de ambiente (para CI/CD e Segredos do GitHub)
+		configBuilder.AddEnvironmentVariables();
 
-			builder.Configuration.AddConfiguration(config);
-			builder.Services.Configure<AppConfiguration>(config.GetSection("AppConfiguration"));
-		}
+		var config = configBuilder.Build();
+		builder.Configuration.AddConfiguration(config);
+		builder.Services.Configure<AppConfiguration>(config.GetSection("AppConfiguration"));
 	}
 }
