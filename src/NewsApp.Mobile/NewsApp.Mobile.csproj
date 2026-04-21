@@ -16,13 +16,8 @@
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">23.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<MauiXaml Include="App.xaml" />
-		<MauiXaml Include="MainPage.xaml" />
-	</ItemGroup>
 
 	<!-- Configuração de Segurança: Variáveis Embutidas -->
 	<ItemGroup>
@@ -34,7 +29,7 @@
 	<!-- Use via CLI: dotnet publish -p:NewsApiKey="SuaChave" -p:GeminiApiKey="SuaChave" -->
 	<Target Name="InjectSecrets" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release' And '$(NewsApiKey)' != ''">
 		<ItemGroup>
-			<AppsettingsLine Include="{ &quot;AppConfiguration&quot;: { &quot;NewsApiKey&quot;: &quot;$(NewsApiKey)&quot;, &quot;GeminiApiKey&quot;: &quot;$(GeminiApiKey)&quot; } }" />
+			<AppsettingsLine Include="{ &quot;AppConfiguration&quot;: { &quot;NewsApiKey&quot;: &quot;$(NewsApiKey)&quot;, &quot;GeminiApiKey&quot;: &quot;$(GeminiApiKey)&quot;, &quot;OpenRouterApiKey&quot;: &quot;$(OpenRouterApiKey)&quot; } }" />
 		</ItemGroup>
 		<WriteLinesToFile File="appsettings.production.json" Lines="@(AppsettingsLine)" Overwrite="true" Encoding="UTF-8" />
 	</Target>
