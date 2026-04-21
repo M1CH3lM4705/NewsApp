@@ -54,7 +54,7 @@ jobs:
           $settings = @{
             AppConfiguration = @{
               NewsApiKey = "${{ secrets.NEWS_API_KEY }}"
-              GeminiApiKey = "${{ secrets.GEMINI_API_KEY }}",
+              GeminiApiKey = "${{ secrets.GEMINI_API_KEY }}"
               OpenRouterApiKey = "${{ secrets.OPEN_ROUTER_API_KEY }}"
             }
           }
