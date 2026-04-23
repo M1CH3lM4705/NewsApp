@@ -21,18 +21,8 @@
 
 	<!-- Configuração de Segurança: Variáveis Embutidas -->
 	<ItemGroup>
-		<EmbeddedResource Include="appsettings.development.json" Condition="Exists('appsettings.development.json')" />
 		<EmbeddedResource Include="appsettings.production.json" Condition="Exists('appsettings.production.json')" />
 	</ItemGroup>
-
-	<!-- Injeção de Segredos em Tempo de Build (CI/CD) -->
-	<!-- Use via CLI: dotnet publish -p:NewsApiKey="SuaChave" -p:GeminiApiKey="SuaChave" -->
-	<Target Name="InjectSecrets" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release' And '$(NewsApiKey)' != ''">
-		<ItemGroup>
-			<AppsettingsLine Include="{ &quot;AppConfiguration&quot;: { &quot;NewsApiKey&quot;: &quot;$(NewsApiKey)&quot;, &quot;GeminiApiKey&quot;: &quot;$(GeminiApiKey)&quot;, &quot;OpenRouterApiKey&quot;: &quot;$(OpenRouterApiKey)&quot; } }" />
-		</ItemGroup>
-		<WriteLinesToFile File="appsettings.production.json" Lines="@(AppsettingsLine)" Overwrite="true" Encoding="UTF-8" />
-	</Target>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="9.0.0" />

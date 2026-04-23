@@ -55,6 +55,7 @@ public static class MauiProgram
 		var configBuilder = new ConfigurationBuilder();
 
 		// Tenta carregar produção
+		Console.WriteLine("DEBUG: Carregando configuração de produção...");
 		using (var streamProd = assembly.GetManifestResourceStream("NewsApp.Mobile.appsettings.production.json"))
 		{
 			if (streamProd != null) configBuilder.AddJsonStream(streamProd);
