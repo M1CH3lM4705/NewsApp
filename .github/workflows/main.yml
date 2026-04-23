@@ -50,7 +50,6 @@ jobs:
       # Injeção das suas variáveis de ambiente (Secrets)
       - name: Create AppSettings
         run: |
-          if (!(Test-Path "src/NewsApp.Web/wwwroot")) { New-Item -ItemType Directory -Force -Path "src/NewsApp.Web/wwwroot" }
           $settings = @{
             AppConfiguration = @{
               NewsApiKey = "${{ secrets.NEWS_API_KEY }}"
@@ -58,7 +57,7 @@ jobs:
               OpenRouterApiKey = "${{ secrets.OPEN_ROUTER_API_KEY }}"
             }
           }
-          $settings | ConvertTo-Json | Out-File -FilePath "src/NewsApp.Web/wwwroot/appsettings.json" -Encoding utf8
+          $settings | ConvertTo-Json | Out-File -FilePath "src/NewsApp.Mobile/appsettings.production.json" -Encoding utf8
 
       - name: Install MAUI Workload
         run: dotnet workload install maui-android
