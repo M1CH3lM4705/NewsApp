@@ -51,29 +51,37 @@ public static class MauiProgram
 
 	private static void LoadEmbeddedConfiguration(MauiAppBuilder builder)
 	{
-		var assembly = Assembly.GetExecutingAssembly();
-		var configBuilder = new ConfigurationBuilder();
-
-		// Tenta carregar produção
-		Console.WriteLine("DEBUG: Carregando configuração de produção...");
-		using (var streamProd = assembly.GetManifestResourceStream("NewsApp.Mobile.appsettings.production.json"))
+		try
 		{
-			if (streamProd != null) configBuilder.AddJsonStream(streamProd);
-		}
+			var assembly = Assembly.GetExecutingAssembly();
+			var configBuilder = new ConfigurationBuilder();
 
-		// Tenta carregar development (sobrescreve produção se em DEBUG)
+			// Tenta carregar produção
+			Console.WriteLine("DEBUG: Carregando configuração de produção...");
+			using (var streamProd = assembly.GetManifestResourceStream("NewsApp.Mobile.appsettings.production.json"))
+			{
+				if (streamProd != null) configBuilder.AddJsonStream(streamProd);
+			}
+
+			// Tenta carregar development (sobrescreve produção se em DEBUG)
 #if DEBUG
-		using (var streamDev = assembly.GetManifestResourceStream("NewsApp.Mobile.appsettings.development.json"))
-		{
-			if (streamDev != null) configBuilder.AddJsonStream(streamDev);
-		}
+			using (var streamDev = assembly.GetManifestResourceStream("NewsApp.Mobile.appsettings.development.json"))
+			{
+				if (streamDev != null) configBuilder.AddJsonStream(streamDev);
+			}
 #endif
 
-		// Adiciona suporte a variáveis de ambiente (para CI/CD e Segredos do GitHub)
-		configBuilder.AddEnvironmentVariables();
+			// Adiciona suporte a variáveis de ambiente (para CI/CD e Segredos do GitHub)
+			configBuilder.AddEnvironmentVariables();
 
-		var config = configBuilder.Build();
-		builder.Configuration.AddConfiguration(config);
-		builder.Services.Configure<AppConfiguration>(config.GetSection("AppConfiguration"));
+			var config = configBuilder.Build();
+			builder.Configuration.AddConfiguration(config);
+			builder.Services.Configure<AppConfiguration>(config.GetSection("AppConfiguration"));
+		}
+		catch (Exception ex)
+		{
+			// Silenciosamente falha para evitar crash no startup
+			Console.WriteLine($"CRITICAL_ERROR: Falha ao carregar configurações: {ex.Message}");
+		}
 	}
 }
