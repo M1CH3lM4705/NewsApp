@@ -3,7 +3,8 @@
 	<application
 		android:allowBackup="true"
 		android:supportsRtl="true"
-		android:label="NewsApp">
+		android:label="NewsApp"
+		android:debuggable="false">
 	</application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="android.permission.INTERNET" />
