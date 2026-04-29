@@ -28,7 +28,10 @@ public class NewsApiService : INewsRepository
         {
             var apiKey = _config.NewsApiKey;
             if (string.IsNullOrEmpty(apiKey))
-                throw new InvalidOperationException("News API Key is missing.");
+            {
+                _logger.LogWarning("News API Key is missing. Returning empty articles.");
+                return Enumerable.Empty<NewsArticle>();
+            }
 
             var requestUri = BuildRequestUri(apiKey, category, query, page, pageSize);
             

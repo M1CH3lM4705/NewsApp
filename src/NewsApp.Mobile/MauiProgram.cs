@@ -60,14 +60,16 @@ public static class MauiProgram
 			Console.WriteLine("DEBUG: Carregando configuração de produção...");
 			using (var streamProd = assembly.GetManifestResourceStream("NewsApp.Mobile.appsettings.production.json"))
 			{
-				if (streamProd != null) configBuilder.AddJsonStream(streamProd);
+				if (streamProd != null && streamProd.Length > 0) 
+                    configBuilder.AddJsonStream(streamProd);
 			}
 
 			// Tenta carregar development (sobrescreve produção se em DEBUG)
 #if DEBUG
 			using (var streamDev = assembly.GetManifestResourceStream("NewsApp.Mobile.appsettings.development.json"))
 			{
-				if (streamDev != null) configBuilder.AddJsonStream(streamDev);
+				if (streamDev != null && streamDev.Length > 0) 
+                    configBuilder.AddJsonStream(streamDev);
 			}
 #endif
 
