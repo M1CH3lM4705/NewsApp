@@ -112,4 +112,22 @@ public class NewsApiServiceTests
         var ex = await Assert.ThrowsAsync<ExternalServiceException>(() => service.GetArticlesAsync());
         Assert.IsType<HttpRequestException>(ex.InnerException);
     }
+
+    [Fact]
+    public async Task GetArticlesAsync_ShouldReturnEmpty_WhenApiKeyIsMissing()
+    {
+        // Arrange
+        var httpClient = new HttpClient();
+        var configOptions = Options.Create(new AppConfiguration { NewsApiKey = "" });
+        var mockLogger = new Mock<ILogger<NewsApiService>>();
+
+        var service = new NewsApiService(httpClient, configOptions, mockLogger.Object);
+
+        // Act
+        var result = await service.GetArticlesAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
 }
