@@ -59,7 +59,7 @@ public class NewsApiServiceTests
     }
 
     [Fact]
-    public async Task GetArticlesAsync_ShouldThrowExternalServiceException_WhenApiReturnsError()
+    public async Task GetArticlesAsync_ShouldReturnEmpty_WhenApiReturnsError()
     {
         // Arrange
         var mockHttpMessageHandler = new Mock<HttpMessageHandler>();
@@ -82,14 +82,16 @@ public class NewsApiServiceTests
 
         var service = new NewsApiService(httpClient, configOptions, mockLogger.Object);
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<ExternalServiceException>(() => service.GetArticlesAsync());
-        Assert.Equal(401, ex.StatusCode);
-        Assert.Equal(nameof(NewsApiService), ex.ServiceName);
+        // Act
+        var result = await service.GetArticlesAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
     }
 
     [Fact]
-    public async Task GetArticlesAsync_ShouldThrowExternalServiceException_WhenNetworkErrorOccurs()
+    public async Task GetArticlesAsync_ShouldReturnEmpty_WhenNetworkErrorOccurs()
     {
         // Arrange
         var mockHttpMessageHandler = new Mock<HttpMessageHandler>();
@@ -108,9 +110,12 @@ public class NewsApiServiceTests
 
         var service = new NewsApiService(httpClient, configOptions, mockLogger.Object);
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<ExternalServiceException>(() => service.GetArticlesAsync());
-        Assert.IsType<HttpRequestException>(ex.InnerException);
+        // Act
+        var result = await service.GetArticlesAsync();
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Empty(result);
     }
 
     [Fact]

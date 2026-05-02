@@ -18,6 +18,7 @@ public class NewsApiService : INewsRepository
     public NewsApiService(HttpClient httpClient, IOptions<AppConfiguration> config, ILogger<NewsApiService> logger)
     {
         _httpClient = httpClient;
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("NewsApp-Mobile");
         _config = config.Value;
         _logger = logger;
     }
@@ -36,15 +37,13 @@ public class NewsApiService : INewsRepository
             var requestUri = BuildRequestUri(apiKey, category, query, page, pageSize);
             
             var response = await _httpClient.GetAsync(requestUri).ConfigureAwait(false);
+            Console.WriteLine($"StatusCode: {response.StatusCode}");
             
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                throw new ExternalServiceException(
-                    "Falha ao obter notícias da NewsAPI.", 
-                    nameof(NewsApiService), 
-                    (int)response.StatusCode, 
-                    errorContent);
+                _logger.LogError("Falha ao obter notícias da NewsAPI. StatusCode: {StatusCode}, Content: {Content}", response.StatusCode, errorContent);
+                return Enumerable.Empty<NewsArticle>();
             }
 
             var apiResponse = await response.Content.ReadFromJsonAsync<NewsApiResponse>().ConfigureAwait(false);
@@ -54,15 +53,13 @@ public class NewsApiService : INewsRepository
         }
         catch (HttpRequestException ex)
         {
-            throw new ExternalServiceException("Erro de rede ao conectar com NewsAPI.", nameof(NewsApiService), innerException: ex);
-        }
-        catch (BaseInfrastructureException)
-        {
-            throw;
+            _logger.LogError(ex, "Erro de rede ao conectar com NewsAPI.");
+            return Enumerable.Empty<NewsArticle>();
         }
         catch (Exception ex)
         {
-            throw new ExternalServiceException("Erro inesperado ao processar notícias.", nameof(NewsApiService), innerException: ex);
+            _logger.LogError(ex, "Erro inesperado ao processar notícias.");
+            return Enumerable.Empty<NewsArticle>();
         }
     }
 

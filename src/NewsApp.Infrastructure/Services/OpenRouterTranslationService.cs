@@ -24,6 +24,10 @@ public class OpenRouterTranslationService : BaseTranslationService
         ILogger<OpenRouterTranslationService> logger) : base(cache, logger)
     {
         _httpClient = httpClient;
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("NewsAppMobile/1.0");
+        _httpClient.DefaultRequestHeaders.Add("HTTP-Referer", "https://github.com/miche/NewsApp");
+        _httpClient.DefaultRequestHeaders.Add("X-Title", "NewsApp");
+        _httpClient.Timeout = TimeSpan.FromSeconds(20);
         _config = config.Value;
     }
 
@@ -47,6 +51,10 @@ public class OpenRouterTranslationService : BaseTranslationService
         {
             throw new ExternalServiceException("Erro de rede ao conectar com OpenRouter.", ServiceName, innerException: ex);
         }
+        catch (TaskCanceledException ex)
+        {
+            throw new ExternalServiceException("Timeout ao conectar com OpenRouter.", ServiceName, innerException: ex);
+        }
 
         if (!response.IsSuccessStatusCode)
         {
@@ -58,7 +66,7 @@ public class OpenRouterTranslationService : BaseTranslationService
                 error);
         }
 
-        var openRouterResult = await response.Content.ReadFromJsonAsync<OpenRouterResponse>();
+        var openRouterResult = await response.Content.ReadFromJsonAsync<OpenRouterResponse>().ConfigureAwait(false);
         var jsonText = openRouterResult?.Choices?.FirstOrDefault()?.Message?.Content;
 
         var bulkDto = CleanAndDeserializeResponse(jsonText);
