@@ -23,6 +23,8 @@ public class GeminiTranslationService : BaseTranslationService
         ILogger<GeminiTranslationService> logger) : base(cache, logger)
     {
         _httpClient = httpClient;
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("NewsAppMobile/1.0");
+        _httpClient.Timeout = TimeSpan.FromSeconds(20);
         _config = config.Value;
     }
 
@@ -44,6 +46,10 @@ public class GeminiTranslationService : BaseTranslationService
         {
             throw new ExternalServiceException("Erro de rede ao conectar com Gemini AI.", ServiceName, innerException: ex);
         }
+        catch (TaskCanceledException ex)
+        {
+            throw new ExternalServiceException("Timeout ao conectar com Gemini AI.", ServiceName, innerException: ex);
+        }
 
         if (!response.IsSuccessStatusCode)
         {
@@ -55,7 +61,7 @@ public class GeminiTranslationService : BaseTranslationService
                 error);
         }
 
-        var geminiResult = await response.Content.ReadFromJsonAsync<GeminiResponse>();
+        var geminiResult = await response.Content.ReadFromJsonAsync<GeminiResponse>().ConfigureAwait(false);
         var jsonText = geminiResult?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text;
 
         var bulkDto = CleanAndDeserializeResponse(jsonText);
